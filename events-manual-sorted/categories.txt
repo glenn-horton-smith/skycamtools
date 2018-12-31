@@ -1,0 +1,10 @@
+bad
+ground
+humansnear
+lightning
+meteor
+plane
+rain
+skypointflash
+unknown
+wildlife
