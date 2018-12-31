@@ -1,3 +1,6 @@
+"""A one-off script used to make a Matroska SRT subtitle file to add
+images to a combined video of many events.  See humans_2018_12.sh for example.
+"""
 import datetime
 import re
 

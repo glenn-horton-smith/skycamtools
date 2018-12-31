@@ -1,3 +1,33 @@
+"""An interactive tool for humans to sort events from Spalding AllSky camera
+images collected by WSentinel.exe.  (www.goskysentinal.com)
+
+Requires matplotlib for displaying images and vlc for displaying videos.
+
+Invoke at command line as
+   python3 (unsorted events directory) (sorted events directory)
+
+All files from WSentinel should be present in unsorted events directory.
+The sorted events directory should contain subdirectories for each category,
+and a single file named "categories.txt" with one category name per line.
+The subdirectory names must match the names in categories.txt exactly, and
+the first letter of category must be unique.
+
+Interaction is through the keyboard.  Time-lapse exposure images for
+each event are presented one at a time. Press "?" to see the video for
+the event.  Press the first letter of a category to move the files for
+the event to the file.  Press ctrl-D or ctrl-C to exit.
+
+If you accidentally move an image to the wrong category, you can
+exit the program and move the files to the right directory manually.
+
+If you decide later to split a category into two categories, then you
+can run this program specifying the subdirectory of the category that
+you want to split as the input directory.
+
+:author: Glenn Horton-Smith, 2018-12-31
+
+"""
+
 import sys
 import os
 import subprocess
@@ -8,6 +38,9 @@ import matplotlib.image as mpimg
 MP4_VIEW_COMMAND=['vlc']
 
 def manual_sort(dirin, dirout):
+    """This is the main function for doing all the work.
+    See module description for usage.
+    """
     categories = list( line.strip() for line in
                        open(dirout+'/categories.txt') )
     categories.sort()
@@ -70,12 +103,16 @@ def manual_sort(dirin, dirout):
 
     
 def moveall(t, dirin, dirout, category):
+    """Utility function for moving all files for a given event to the
+    appropriate category subdirectory.
+    """
     for k in [('m','mp4'), ('c','csv'), ('j','jpg'), ('e','txt')]:
         fn = '%s%s.%s'%(k[0], t, k[1])
         os.rename('%s/%s'%(dirin,fn), '%s/%s/%s'%(dirout,category,fn))
 
 
 def main(argv):
+    """main() for command-line invocation"""
     if len(argv) <= 2:
         print("Usage: manual_sort.py (indir) (outdir)")
         sys.exit(1)
