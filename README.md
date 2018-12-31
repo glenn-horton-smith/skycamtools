@@ -1,0 +1,3 @@
+# skycamtools
+
+This is not yet intended to be useful to other people..  Will write more soon as I have time....
