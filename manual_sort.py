@@ -1,7 +1,10 @@
 """An interactive tool for humans to sort events from Spalding AllSky camera
 images collected by WSentinel.exe.  (www.goskysentinal.com)
 
-Requires matplotlib for displaying images and vlc for displaying videos.
+Requires:
+  matplotlib for displaying images,
+  vlc for displaying videos efficiently,
+  evdisp (uses imageio) for displaying events frame-by-frame.
 
 Invoke at command line as
    python3 (unsorted events directory) (sorted events directory)
@@ -33,6 +36,7 @@ import os
 import subprocess
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import evdisp
 
 #JPG_VIEW_COMMAND=['display','-immutable','-geometry','+0+0']
 MP4_VIEW_COMMAND=['vlc']
@@ -47,12 +51,12 @@ def manual_sort(dirin, dirout):
     keycodes = dict( (c[0], c) for c in categories )
     if len(keycodes) != len(categories):
         raise Exception("Non-unique category first letters")
-    prompt = '  '.join(categories) + '  ?(to show mp4) :  '
+    prompt = '  '.join(categories) + '  ?(to animate event)  /(event display) :  '
     csvlist = list( fn for fn in os.listdir(dirin)
                     if fn[0] == 'c' and fn.endswith('.csv') )
     viewer_log = open('manual_sort_viewer_log.txt','w')
     csvlist.sort()
-    fig = plt.figure(1)
+    fig,ax = plt.subplots()
     figprompt = fig.text(0, 1, prompt, verticalalignment='top', wrap=True)
     fig.canvas.set_window_title(sys.argv[0])
     fig.show()
@@ -65,22 +69,31 @@ def manual_sort(dirin, dirout):
         #                         stdin=subprocess.DEVNULL,
         #                         stdout=viewer_log, stderr=subprocess.STDOUT)
         img = mpimg.imread('%s/j%s.jpg'%(dirin, t))
-        imgplot = plt.imshow(img)
-        ax = fig.axes[0]
+        plt.figure(fig.number)
+        imgplot = ax.imshow(img)
         ax.set_title(t)
         fig.canvas.set_window_title(sys.argv[0] + " " + t)
         fig.canvas.draw_idle()
+        evd = None
         proc2 = None
         while True:
             fig.canvas.draw_idle()
             answer = input(prompt)
-            if answer == '?' and proc2 == None:
+            if answer == '?':
                 # pid2 = os.spawnlp(os.P_NOWAIT, VIEWER_COMMAND, VIEWER_COMMAND,
                 #          '%s/m%s.mp4'%(dirin, t))
-                proc2 = subprocess.Popen(
-                    MP4_VIEW_COMMAND + ['%s/m%s.mp4'%(dirin, t)],
-                    stdin=subprocess.DEVNULL,
-                    stdout=viewer_log, stderr=subprocess.STDOUT)
+                if proc2 == None:
+                    proc2 = subprocess.Popen(
+                        MP4_VIEW_COMMAND + ['%s/m%s.mp4'%(dirin, t)],
+                        stdin=subprocess.DEVNULL,
+                        stdout=viewer_log, stderr=subprocess.STDOUT)
+                else:
+                    print("Video already playing")
+                continue
+            elif answer == '/':
+                if evd == None:
+                    evd = evdisp.evdisp(None)
+                evd.open('%s/m%s.mp4'%(dirin, t))
                 continue
             elif answer in keycodes:
                 category = keycodes[answer]
@@ -96,8 +109,8 @@ def manual_sort(dirin, dirout):
         #     os.kill(pid2, signal.SIGTERM)
         #proc.terminate()
         ax.clear()
-        if proc2:
-            proc2.terminate()
+        evd.stopvideo()
+        evd.f.canvas.window().hide()
     print("All files processed.")
 
 
